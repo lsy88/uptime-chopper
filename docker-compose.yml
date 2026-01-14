@@ -1,0 +1,12 @@
+services:
+  uptime-chopper:
+    image: uptime-chopper:latest
+    container_name: uptime-chopper
+    restart: always
+    ports:
+      - "7601:7601"
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Shanghai

@@ -1,0 +1,68 @@
+{
+  "dashboard": "仪表盘",
+  "addMonitor": "添加监控项",
+  "editMonitor": "编辑监控项",
+  "monitors": "监控列表",
+  "search": "搜索...",
+  "status": {
+    "up": "正常",
+    "down": "异常",
+    "pending": "检测中",
+    "maintenance": "维护中"
+  },
+  "settings": "设置",
+  "theme": {
+    "light": "亮色",
+    "dark": "暗色",
+    "auto": "自动"
+  },
+  "language": "语言",
+  "loading": "加载中...",
+  "save": "保存",
+  "cancel": "取消",
+  "confirmDelete": "确定要删除这个监控项吗？",
+  "monitor": {
+    "name": "显示名称",
+    "type": "监控类型",
+    "url": "URL",
+    "interval": "检测间隔 (秒)",
+    "timeout": "超时时间 (秒)",
+    "container": "Docker 容器",
+    "autoRestart": "故障时自动重启容器",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "pause": "暂停",
+    "resume": "恢复",
+    "edit": "编辑",
+    "start": "启动",
+    "stop": "停止",
+    "restart": "重启",
+    "refresh": "刷新",
+    "details": "详情",
+    "notifications": "通知设置",
+    "addNotification": "添加通知渠道",
+    "notificationName": "通知名称",
+    "notificationType": "通知类型",
+    "notificationUrl": "Webhook 地址",
+    "notificationTypes": {
+        "discord": "Discord",
+        "dingtalk": "钉钉机器人",
+        "wechat": "企业微信"
+    },
+    "noNotifications": "暂无通知渠道，请点击添加",
+    "types": {
+      "http": "HTTP(s)",
+      "container": "Docker 容器"
+    }
+  },
+  "detail": {
+    "heartbeat": "心跳",
+    "avgPing": "平均延迟",
+    "uptime": "在线率",
+    "certExp": "证书过期",
+    "events": "近期事件",
+    "logs": "容器日志",
+    "lastCheck": "最后检测"
+  }
+}
