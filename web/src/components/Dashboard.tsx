@@ -4,6 +4,7 @@ import { Card, Row, Col, Badge } from 'react-bootstrap';
 import { FaArrowUp, FaArrowDown, FaClock } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import TopBar from './TopBar';
+import WaveCanvas from './WaveCanvas';
 
 interface DashboardProps {
   monitors: Monitor[];
@@ -11,6 +12,26 @@ interface DashboardProps {
   searchTerm: string;
   onSearch: (term: string) => void;
 }
+
+const WaveWrapper = ({ percent, colorRgb }: { percent: number, colorRgb: string }) => (
+  <div 
+    style={{ 
+      position: 'absolute', 
+      bottom: 0, 
+      left: 0, 
+      width: '100%', 
+      height: `${percent}%`, 
+      transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)',
+      zIndex: 0,
+      opacity: percent <= 0 ? 0 : 1
+    }}
+  >
+    <div style={{ position: 'absolute', top: '-25px', left: 0, width: '100%', height: '40px' }}>
+      <WaveCanvas color={colorRgb} height={40} />
+    </div>
+    <div style={{ width: '100%', height: '100%', backgroundColor: `rgba(${colorRgb}, 1)` }}></div>
+  </div>
+);
 
 const Dashboard: React.FC<DashboardProps> = ({ monitors, onSelectMonitor, searchTerm, onSearch }) => {
   const { t } = useTranslation();
@@ -39,53 +60,38 @@ const Dashboard: React.FC<DashboardProps> = ({ monitors, onSelectMonitor, search
         
         <Row className="mb-4 g-3">
           <Col md={4}>
-            <Card className="wave-card h-100">
-              <div className="wave-wrapper wave-status-up" style={{ height: `${upPercent}%` }}>
-                  <div className="wave-block"></div>
-                  <div className="wave-surface wave-surface-1"></div>
-                  <div className="wave-surface wave-surface-2"></div>
-                  <div className="wave-surface wave-surface-3"></div>
-              </div>
+            <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <WaveWrapper percent={upPercent} colorRgb="92, 221, 139" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary">{t('status.up')}</h6>
-                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{upCount}</h2>
+                  <h6 className="text-secondary" style={{ color: upPercent > 50 ? '#111' : 'inherit' }}>{t('status.up')}</h6>
+                  <h2 className="mb-0" style={{ color: upPercent > 50 ? '#000' : 'var(--text-primary)' }}>{upCount}</h2>
                 </div>
-                <FaArrowUp size={30} className="text-success opacity-50" />
+                <FaArrowUp size={30} className="text-success opacity-50" style={{ color: upPercent > 50 ? '#000 !important' : '' }} />
               </Card.Body>
             </Card>
           </Col>
           <Col md={4}>
-            <Card className="wave-card h-100">
-              <div className="wave-wrapper wave-status-down" style={{ height: `${downPercent}%` }}>
-                  <div className="wave-block"></div>
-                  <div className="wave-surface wave-surface-1"></div>
-                  <div className="wave-surface wave-surface-2"></div>
-                  <div className="wave-surface wave-surface-3"></div>
-              </div>
+            <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <WaveWrapper percent={downPercent} colorRgb="220, 53, 69" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary">{t('status.down')}</h6>
-                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{downCount}</h2>
+                  <h6 className="text-secondary" style={{ color: downPercent > 50 ? '#fff' : 'inherit' }}>{t('status.down')}</h6>
+                  <h2 className="mb-0" style={{ color: downPercent > 50 ? '#fff' : 'var(--text-primary)' }}>{downCount}</h2>
                 </div>
-                <FaArrowDown size={30} className="text-danger opacity-50" />
+                <FaArrowDown size={30} className="text-danger opacity-50" style={{ color: downPercent > 50 ? '#fff !important' : '' }} />
               </Card.Body>
             </Card>
           </Col>
           <Col md={4}>
-            <Card className="wave-card h-100">
-              <div className="wave-wrapper wave-status-pending" style={{ height: `${unknownPercent}%` }}>
-                  <div className="wave-block"></div>
-                  <div className="wave-surface wave-surface-1"></div>
-                  <div className="wave-surface wave-surface-2"></div>
-                  <div className="wave-surface wave-surface-3"></div>
-              </div>
+            <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <WaveWrapper percent={unknownPercent} colorRgb="255, 193, 7" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary">{t('status.pending')}</h6>
-                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{unknownCount}</h2>
+                  <h6 className="text-secondary" style={{ color: unknownPercent > 50 ? '#000' : 'inherit' }}>{t('status.pending')}</h6>
+                  <h2 className="mb-0" style={{ color: unknownPercent > 50 ? '#000' : 'var(--text-primary)' }}>{unknownCount}</h2>
                 </div>
-                <FaClock size={30} className="text-warning opacity-50" />
+                <FaClock size={30} className="text-warning opacity-50" style={{ color: unknownPercent > 50 ? '#000 !important' : '' }} />
               </Card.Body>
             </Card>
           </Col>

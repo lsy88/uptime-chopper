@@ -156,64 +156,84 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
 
       {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
 
-      {monitor.type === 'container' && linkedContainer && (
+      {monitor.type === 'container' && (
         <div className="kuba-card mb-4">
             <div className="kuba-card-header">
                 <span><FaBox className="me-2" /> {t('monitor.container')}</span>
-                <Badge bg={linkedContainer.state === 'running' ? 'success' : 'danger'}>{linkedContainer.state}</Badge>
+                {linkedContainer ? (
+                    <Badge bg={linkedContainer.state === 'running' ? 'success' : 'danger'}>{linkedContainer.state}</Badge>
+                ) : (
+                    <Badge bg="secondary">Unknown</Badge>
+                )}
             </div>
             
-            <div className="d-flex flex-wrap gap-3 align-items-center mb-4">
-                <ButtonGroup>
-                    <Button 
-                        variant="success" 
-                        onClick={() => handleAction('start')} 
-                        disabled={actionLoading || linkedContainer.state === 'running'}
-                    >
-                        <FaPlay className="me-2" /> {t('monitor.start')}
-                    </Button>
-                    <Button 
-                        variant="danger" 
-                        onClick={() => handleAction('stop')} 
-                        disabled={actionLoading || linkedContainer.state !== 'running'}
-                    >
-                        <FaStop className="me-2" /> {t('monitor.stop')}
-                    </Button>
-                    <Button 
-                        variant="warning" 
-                        onClick={() => handleAction('restart')} 
-                        disabled={actionLoading}
-                    >
-                        <FaRedo className="me-2" /> {t('monitor.restart')}
-                    </Button>
-                </ButtonGroup>
+            {!linkedContainer ? (
+                <Alert variant="warning">
+                    {t('monitor.containerNotFound', { defaultValue: 'Container not found in local Docker context.' })}
+                    <br />
+                    <small className="text-muted">Target: {monitor.containerName || monitor.container?.containerId || 'N/A'}</small>
+                </Alert>
+            ) : (
+                <div className="d-flex flex-wrap gap-3 align-items-center mb-4">
+                    <ButtonGroup>
+                        <Button 
+                            variant="success" 
+                            onClick={() => handleAction('start')} 
+                            disabled={actionLoading || linkedContainer.state === 'running'}
+                        >
+                            <FaPlay className="me-2" /> {t('monitor.start')}
+                        </Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={() => handleAction('stop')} 
+                            disabled={actionLoading || linkedContainer.state !== 'running'}
+                        >
+                            <FaStop className="me-2" /> {t('monitor.stop')}
+                        </Button>
+                        <Button 
+                            variant="warning" 
+                            onClick={() => handleAction('restart')} 
+                            disabled={actionLoading}
+                        >
+                            <FaRedo className="me-2" /> {t('monitor.restart')}
+                        </Button>
+                    </ButtonGroup>
 
-                <div className="d-flex align-items-center ms-auto">
-                    <span className="me-2 text-secondary">Restart Policy:</span>
-                    <Form.Select 
-                        size="sm" 
-                        style={{width: 'auto'}} 
-                        value={targetPolicy}
-                        onChange={(e) => handleRestartPolicy(e.target.value)}
-                        className="bg-card text-primary border-secondary"
-                    >
-                        <option value="no">No</option>
-                        <option value="always">Always</option>
-                        <option value="on-failure">On Failure</option>
-                        <option value="unless-stopped">Unless Stopped</option>
-                    </Form.Select>
+                    <div className="d-flex align-items-center ms-auto">
+                        <span className="me-2 text-secondary">Restart Policy:</span>
+                        <Form.Select 
+                            size="sm" 
+                            style={{width: 'auto'}} 
+                            value={targetPolicy}
+                            onChange={(e) => handleRestartPolicy(e.target.value)}
+                            className="bg-card text-primary border-secondary"
+                        >
+                            <option value="no">No</option>
+                            <option value="always">Always</option>
+                            <option value="on-failure">On Failure</option>
+                            <option value="unless-stopped">Unless Stopped</option>
+                        </Form.Select>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            <div className="d-flex align-items-center justify-content-between mb-2">
-                <h6 className="mb-0 text-secondary"><FaTerminal className="me-2" /> {t('detail.logs')}</h6>
-                <Button size="sm" variant="outline-secondary" onClick={fetchLogs} disabled={loadingLogs}>
-                    {loadingLogs ? <Spinner size="sm" animation="border" /> : <FaRedo />} {t('monitor.refresh')}
-                </Button>
-            </div>
-            <div className="log-viewer">
-                {logs ? <pre className="m-0 text-break">{logs}</pre> : <div className="text-center text-muted mt-5">No logs available</div>}
+            <div className="log-viewer mb-3">
+                {loadingLogs ? (
+                    <div className="text-center p-4">
+                        <Spinner animation="border" variant="light" />
+                    </div>
+                ) : (
+                    <pre className="m-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        {logs || (linkedContainer ? t('monitor.noLogs') : 'Container not attached')}
+                    </pre>
+                )}
                 <div ref={logsEndRef} />
+            </div>
+            
+            <div className="d-flex justify-content-end">
+                <Button variant="outline-light" size="sm" onClick={fetchLogs} disabled={loadingLogs || !linkedContainer}>
+                     <FaTerminal className="me-2" /> {t('monitor.refreshLogs')}
+                </Button>
             </div>
         </div>
       )}
