@@ -18,6 +18,7 @@ import {
 import { Badge, Button, ButtonGroup, Spinner, Form, Alert, Row, Col, Table } from 'react-bootstrap';
 import { FaPlay, FaStop, FaRedo, FaTerminal, FaBox, FaClock, FaEdit, FaTrash, FaPause } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import AddMonitorModal from './AddMonitorModal';
 
 interface MonitorDetailProps {
@@ -157,6 +158,53 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
       } catch (err: any) {
           setError("Failed to toggle pause: " + err.message);
       }
+  };
+
+  const chartData = [...history].reverse().map(entry => ({
+      time: new Date(entry.checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      fullTime: new Date(entry.checkedAt).toLocaleString(),
+      latency: entry.latencyMs,
+      status: entry.status,
+      message: entry.message
+  }));
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+      if (active && payload && payload.length) {
+          const data = payload[0].payload;
+          return (
+              <div className="custom-tooltip" style={{ 
+                  backgroundColor: 'var(--bg-card)', 
+                  padding: '10px', 
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '5px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+              }}>
+                  <p className="label mb-1 fw-bold">{data.fullTime}</p>
+                  <p className="mb-1" style={{ color: data.status === 'up' ? 'var(--status-up)' : data.status === 'down' ? 'var(--status-down)' : 'var(--status-pending)' }}>
+                      {t('history.status')}: {data.status}
+                  </p>
+                  <p className="mb-1">{t('history.latency')}: {data.latency}ms</p>
+                  {data.status === 'down' && (
+                      <p className="text-danger small mb-0" style={{maxWidth: '300px', whiteSpace: 'pre-wrap', borderTop: '1px solid #444', marginTop: '5px', paddingTop: '5px'}}>
+                          {data.message}
+                      </p>
+                  )}
+              </div>
+          );
+      }
+      return null;
+  };
+
+  const CustomizedDot = (props: any) => {
+      const { cx, cy, payload } = props;
+      if (payload.status === 'down') {
+          return (
+              <circle cx={cx} cy={cy} r={4} stroke="none" fill="var(--status-down)" />
+          );
+      }
+      return (
+          <circle cx={cx} cy={cy} r={0} stroke="none" fill="transparent" />
+      );
   };
 
   return (
@@ -330,40 +378,51 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
 
       <div className="kuba-card mt-4">
           <div className="kuba-card-header">{t('monitor.history', { defaultValue: 'History' })}</div>
-          <div className="table-responsive">
-              <Table hover variant="dark" className="mb-0">
-                  <thead>
-                      <tr>
-                          <th>{t('history.time', { defaultValue: 'Time' })}</th>
-                          <th>{t('history.status', { defaultValue: 'Status' })}</th>
-                          <th>{t('history.latency', { defaultValue: 'Latency' })}</th>
-                          <th>{t('history.message', { defaultValue: 'Message' })}</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      {history.length === 0 ? (
-                          <tr>
-                              <td colSpan={4} className="text-center text-secondary py-4">
-                                  {t('history.noData', { defaultValue: 'No history data available yet' })}
-                              </td>
-                          </tr>
-                      ) : (
-                          history.map((entry, i) => (
-                              <tr key={i}>
-                                  <td style={{ whiteSpace: 'nowrap' }}>{new Date(entry.checkedAt).toLocaleString()}</td>
-                                  <td>
-                                      <Badge bg={entry.status === 'up' ? 'success' : entry.status === 'down' ? 'danger' : 'secondary'}>
-                                          {entry.status}
-                                      </Badge>
-                                  </td>
-                                  <td>{entry.latencyMs > 0 ? `${entry.latencyMs}ms` : '-'}</td>
-                                  <td className="text-break" style={{ maxWidth: '400px' }}>{entry.message}</td>
-                              </tr>
-                          ))
-                      )}
-                  </tbody>
-              </Table>
-          </div>
+          
+          {history.length > 0 && (
+              <div style={{ width: '100%', height: 300, marginBottom: '20px' }}>
+                  <ResponsiveContainer>
+                      <LineChart
+                          data={chartData}
+                          margin={{
+                              top: 5,
+                              right: 30,
+                              left: 20,
+                              bottom: 5,
+                          }}
+                      >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" vertical={false} />
+                          <XAxis 
+                            dataKey="time" 
+                            stroke="var(--text-secondary)" 
+                            tick={{fontSize: 12}}
+                            minTickGap={30}
+                          />
+                          <YAxis 
+                            stroke="var(--text-secondary)" 
+                            tick={{fontSize: 12}}
+                            unit="ms"
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="latency" 
+                            stroke="var(--accent-color)" 
+                            strokeWidth={2}
+                            dot={<CustomizedDot />}
+                            activeDot={{ r: 6, fill: 'var(--text-primary)' }}
+                            isAnimationActive={false}
+                          />
+                      </LineChart>
+                  </ResponsiveContainer>
+              </div>
+          )}
+
+          {history.length === 0 && (
+              <div className="text-center text-secondary py-4">
+                  {t('history.noData', { defaultValue: 'No history data available yet' })}
+              </div>
+          )}
       </div>
 
       <AddMonitorModal 
