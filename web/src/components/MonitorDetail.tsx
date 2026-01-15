@@ -207,7 +207,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
           );
       }
       return (
-          <circle cx={cx} cy={cy} r={0} stroke="none" fill="transparent" />
+          <circle cx={cx} cy={cy} r={3} stroke="none" fill="var(--status-up)" />
       );
   };
 
@@ -379,7 +379,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                           }}
                       >
                           <defs>
-                            <linearGradient id="colorStatus" x1="0" y1="0" x2="1" y2="0">
+                            <linearGradient id={`colorStatus-${monitor.id}`} x1="0" y1="0" x2="1" y2="0">
                               {chartData.map((entry, index) => (
                                 <stop 
                                   key={index} 
@@ -407,7 +407,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                           <Line 
                             type="monotone" 
                             dataKey="latency" 
-                            stroke="url(#colorStatus)" 
+                            stroke={`url(#colorStatus-${monitor.id})`} 
                             strokeWidth={3}
                             dot={<CustomizedDot />}
                             activeDot={{ r: 6, fill: 'var(--text-primary)' }}
