@@ -41,6 +41,7 @@
     "restart": "重启",
     "refresh": "刷新",
     "details": "详情",
+    "history": "历史记录",
     "notifications": "通知设置",
     "addNotification": "添加通知渠道",
     "notificationName": "通知名称",

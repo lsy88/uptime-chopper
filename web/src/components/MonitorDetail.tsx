@@ -332,7 +332,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
               <Col md={6}>
                   <div className="mb-3">
                       <label className="text-secondary small">{t('detail.lastCheck')}</label>
-                      <div>{monitor.lastCheck ? new Date(monitor.lastCheck).toLocaleString() : 'Never'}</div>
+                      <div>{monitor.lastCheck ? new Date(monitor.lastCheck).toLocaleString() : '-'}</div>
                   </div>
                   <div className="mb-3">
                       <label className="text-secondary small">{t('monitor.notifications')}</label>
@@ -378,6 +378,17 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                               bottom: 5,
                           }}
                       >
+                          <defs>
+                            <linearGradient id="colorStatus" x1="0" y1="0" x2="1" y2="0">
+                              {chartData.map((entry, index) => (
+                                <stop 
+                                  key={index} 
+                                  offset={`${(index / (chartData.length - 1)) * 100}%`} 
+                                  stopColor={entry.status === 'up' ? 'var(--status-up)' : 'var(--status-down)'} 
+                                />
+                              ))}
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#444" vertical={false} />
                           <XAxis 
                             dataKey="time" 
@@ -394,7 +405,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                           <Line 
                             type="monotone" 
                             dataKey="latency" 
-                            stroke="var(--accent-color)" 
+                            stroke="url(#colorStatus)" 
                             strokeWidth={2}
                             dot={<CustomizedDot />}
                             activeDot={{ r: 6, fill: 'var(--text-primary)' }}
