@@ -111,7 +111,7 @@ func Send(ctx context.Context, client *http.Client, w config.NotificationWebhook
 }
 
 func buildDingTalkPayload(p Payload) ([]byte, error) {
-	title := fmt.Sprintf("Monitor Alert: %s", p.Type)
+	title := fmt.Sprintf("监控报警: %s", translateEventType(p.Type))
 	text := formatMarkdown(title, p)
 
 	payload := map[string]any{
@@ -125,7 +125,7 @@ func buildDingTalkPayload(p Payload) ([]byte, error) {
 }
 
 func buildWeChatPayload(p Payload) ([]byte, error) {
-	title := fmt.Sprintf("Monitor Alert: %s", p.Type)
+	title := fmt.Sprintf("监控报警: %s", translateEventType(p.Type))
 	text := formatMarkdown(title, p)
 
 	payload := map[string]any{
@@ -138,14 +138,12 @@ func buildWeChatPayload(p Payload) ([]byte, error) {
 }
 
 func buildDiscordPayload(p Payload) ([]byte, error) {
-	title := fmt.Sprintf("Monitor Alert: %s", p.Type)
+	title := fmt.Sprintf("监控报警: %s", translateEventType(p.Type))
 	description := formatMarkdown(title, p)
 
 	color := 0x5cdd8b // Green
-	if p.Type == "down" {
+	if s, ok := p.Data["current"].(string); ok && s == "down" {
 		color = 0xdc3545 // Red
-	} else if p.Type == "pending" {
-		color = 0xffc107 // Yellow
 	}
 
 	payload := map[string]any{
@@ -162,32 +160,82 @@ func buildDiscordPayload(p Payload) ([]byte, error) {
 	return json.Marshal(payload)
 }
 
+func translateEventType(t string) string {
+	switch t {
+	case "status_changed":
+		return "状态变更"
+	case "remediated":
+		return "自动修复"
+	case "error":
+		return "错误"
+	default:
+		return t
+	}
+}
+
 func formatMarkdown(title string, p Payload) string {
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("## %s\n", title))
-	buf.WriteString(fmt.Sprintf("**Monitor ID**: %s\n", p.MonitorID))
-	buf.WriteString(fmt.Sprintf("**Time**: %s\n", p.At.Format(time.RFC3339)))
 
-	if msg, ok := p.Data["message"].(string); ok {
-		buf.WriteString(fmt.Sprintf("**Message**: %s\n", msg))
+	// Status Emoji
+	statusEmoji := "ℹ️"
+	if _s, ok := p.Data["current"].(string); ok {
+		if _s == "up" {
+			statusEmoji = "🟢"
+		} else if _s == "down" {
+			statusEmoji = "🔴"
+		}
 	}
 
-	// Add other data fields
-	for k, v := range p.Data {
-		if k == "message" {
-			continue
+	// Title with double newline to ensure separation
+	buf.WriteString(fmt.Sprintf("# %s %s\n\n", statusEmoji, title))
+
+	// Monitor Name
+	if name, ok := p.Data["monitorName"].(string); ok && name != "" {
+		buf.WriteString(fmt.Sprintf("- **监控名称**: %s\n", name))
+	}
+
+	// Target
+	if target, ok := p.Data["target"].(string); ok && target != "" {
+		buf.WriteString(fmt.Sprintf("- **监控目标**: %s\n", target))
+	}
+
+	// Status
+	if current, ok := p.Data["current"].(string); ok {
+		statusText := current
+		if current == "up" {
+			statusText = "🟢 正常 (Up)"
+		} else if current == "down" {
+			statusText = "🔴 故障 (Down)"
 		}
-		buf.WriteString(fmt.Sprintf("- **%s**: %v\n", k, v))
+		buf.WriteString(fmt.Sprintf("- **当前状态**: %s\n", statusText))
+	}
+
+	buf.WriteString(fmt.Sprintf("- **时间**: %s\n", p.At.Format("2006-01-02 15:04:05")))
+
+	if msg, ok := p.Data["message"].(string); ok && msg != "" {
+		buf.WriteString(fmt.Sprintf("- **消息**: %s\n", msg))
+	}
+
+	if lat, ok := p.Data["latencyMs"]; ok {
+		buf.WriteString(fmt.Sprintf("- **延迟**: %v ms\n", lat))
+	}
+
+	// Remediation info
+	if action, ok := p.Data["action"].(string); ok {
+		buf.WriteString(fmt.Sprintf("- **修复动作**: %s\n", action))
+	}
+	if attempt, ok := p.Data["attempt"]; ok {
+		buf.WriteString(fmt.Sprintf("- **尝试次数**: %v\n", attempt))
 	}
 
 	if p.Logs != nil {
-		buf.WriteString("\n**Container Logs**:\n")
+		buf.WriteString("\n> **容器日志**:\n\n")
 		buf.WriteString("```\n")
 		// Limit log length for markdown to avoid message too long errors
 		content := p.Logs.Content
 		if len(content) > 1000 {
 			content = content[len(content)-1000:]
-			buf.WriteString("...(truncated)...\n")
+			buf.WriteString("...(已截断)...\n")
 		}
 		buf.WriteString(content)
 		buf.WriteString("\n```\n")

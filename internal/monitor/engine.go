@@ -303,15 +303,24 @@ func (e *Engine) tryAttachLogs(ctx context.Context, m model.Monitor, now time.Ti
 }
 
 func (e *Engine) emitNotification(ctx context.Context, m model.Monitor, res model.CheckResult, logs *notify.DockerLogsAttachment, prev model.MonitorStatus) {
+	target := ""
+	if m.Type == model.MonitorTypeHTTP && m.HTTP != nil {
+		target = m.HTTP.URL
+	} else if m.Type == model.MonitorTypeContainer && m.Container != nil {
+		target = m.Container.ContainerID
+	}
+
 	payload := notify.Payload{
 		Type:      string(model.EventStatusChanged),
 		MonitorID: m.ID,
 		At:        res.CheckedAt,
 		Data: map[string]any{
-			"previous":  string(prev),
-			"current":   string(res.Status),
-			"message":   res.Message,
-			"latencyMs": res.LatencyMs,
+			"monitorName": m.Name,
+			"target":      target,
+			"previous":    string(prev),
+			"current":     string(res.Status),
+			"message":     res.Message,
+			"latencyMs":   res.LatencyMs,
 		},
 		Logs: logs,
 	}
