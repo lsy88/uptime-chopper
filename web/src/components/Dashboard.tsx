@@ -121,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ monitors, onSelectMonitor, search
                 <div className="d-flex flex-column h-100">
                   <div className="d-flex align-items-center justify-content-between mb-2">
                     <div className="d-flex align-items-center">
-                        <span className={`status-dot ${m.status === 'up' ? 'up' : m.status === 'down' ? 'down' : 'pending'}`}></span>
+                        <span className={`status-dot ${m.status === 'up' ? 'up' : m.status === 'down' ? 'down' : m.status === 'paused' ? 'paused' : 'pending'}`}></span>
                         <h5 className="mb-0 text-truncate">{m.name}</h5>
                     </div>
                     <Badge bg={m.type === 'container' ? 'info' : 'secondary'}>
