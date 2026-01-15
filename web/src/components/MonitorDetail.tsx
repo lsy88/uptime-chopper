@@ -400,13 +400,15 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                             stroke="var(--text-secondary)" 
                             tick={{fontSize: 12}}
                             unit="ms"
+                            padding={{ top: 20, bottom: 10 }}
+                            tickFormatter={(val) => val < 0 ? '' : val}
                           />
                           <Tooltip content={<CustomTooltip />} />
                           <Line 
                             type="monotone" 
                             dataKey="latency" 
                             stroke="url(#colorStatus)" 
-                            strokeWidth={2}
+                            strokeWidth={3}
                             dot={<CustomizedDot />}
                             activeDot={{ r: 6, fill: 'var(--text-primary)' }}
                             isAnimationActive={false}
