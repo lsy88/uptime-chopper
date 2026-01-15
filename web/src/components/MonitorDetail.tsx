@@ -9,10 +9,14 @@ import {
     startContainer,
     stopContainer,
     restartContainer,
-    setRestartPolicy
+    setRestartPolicy,
+    MonitorHistoryEntry,
+    getMonitorHistory,
+    pauseMonitor,
+    resumeMonitor
 } from '../api';
-import { Badge, Button, ButtonGroup, Spinner, Form, Alert, Row, Col } from 'react-bootstrap';
-import { FaPlay, FaStop, FaRedo, FaTerminal, FaBox, FaClock, FaEdit, FaTrash } from 'react-icons/fa';
+import { Badge, Button, ButtonGroup, Spinner, Form, Alert, Row, Col, Table } from 'react-bootstrap';
+import { FaPlay, FaStop, FaRedo, FaTerminal, FaBox, FaClock, FaEdit, FaTrash, FaPause } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import AddMonitorModal from './AddMonitorModal';
 
@@ -31,12 +35,14 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [notifications, setNotifications] = useState<NotificationWebhook[]>([]);
+  const [history, setHistory] = useState<MonitorHistoryEntry[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   
-  // For container monitors, find the linked container info if available
-  // In a real app, we might need a better way to link, currently matching by name or ID if possible?
-  // But wait, the monitor config has `containerName`.
+  // For container monitors, try to find the linked container info
+  // If not found in the list, we'll fall back to using the containerName from the monitor config
+  // This allows interacting with containers that might not be in the initial list (e.g. hidden or race condition)
   const linkedContainer = containers.find(c => c.names?.some(n => n.replace('/', '') === monitor.containerName));
-  const containerId = linkedContainer?.id;
+  const containerId = linkedContainer?.id || monitor.containerName;
 
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -66,14 +72,30 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const data = await getMonitorHistory(monitor.id);
+      setHistory(data || []);
+    } catch (err) {
+      console.error("Failed to load history", err);
+    }
+  };
+
   useEffect(() => {
     loadNotifications();
+    fetchHistory();
     if (monitor.type === 'container' && containerId) {
       fetchLogs();
     } else {
         setLogs('');
     }
   }, [monitor.id, containerId]);
+
+  useEffect(() => {
+      if (monitor.lastCheck) {
+          fetchHistory();
+      }
+  }, [monitor.lastCheck]);
 
   const handleAction = async (action: 'start' | 'stop' | 'restart') => {
     if (!containerId) return;
@@ -124,6 +146,19 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
     }
   };
 
+  const handlePauseToggle = async () => {
+      try {
+          if (monitor.isPaused) {
+              await resumeMonitor(monitor.id);
+          } else {
+              await pauseMonitor(monitor.id);
+          }
+          onRefresh();
+      } catch (err: any) {
+          setError("Failed to toggle pause: " + err.message);
+      }
+  };
+
   return (
     <div className="animate-fade-in" style={{ padding: '20px' }}>
       <div className="d-flex align-items-center justify-content-between mb-4">
@@ -139,6 +174,14 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
             </h2>
         </div>
         <div className="d-flex align-items-center gap-3">
+            <Button 
+                variant={monitor.isPaused ? "outline-success" : "outline-warning"} 
+                size="sm" 
+                onClick={handlePauseToggle}
+            >
+                {monitor.isPaused ? <FaPlay className="me-2" /> : <FaPause className="me-2" />} 
+                {monitor.isPaused ? t('monitor.resume', {defaultValue: 'Resume'}) : t('monitor.pause', {defaultValue: 'Pause'})}
+            </Button>
             <Button variant="outline-primary" size="sm" onClick={() => setShowEditModal(true)}>
                 <FaEdit className="me-2" /> {t('monitor.edit')}
             </Button>
@@ -167,55 +210,55 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                 )}
             </div>
             
-            {!linkedContainer ? (
+            {!linkedContainer && (
                 <Alert variant="warning">
-                    {t('monitor.containerNotFound', { defaultValue: 'Container not found in local Docker context.' })}
+                    {t('monitor.containerNotFound')}
                     <br />
                     <small className="text-muted">Target: {monitor.containerName || monitor.container?.containerId || 'N/A'}</small>
                 </Alert>
-            ) : (
-                <div className="d-flex flex-wrap gap-3 align-items-center mb-4">
-                    <ButtonGroup>
-                        <Button 
-                            variant="success" 
-                            onClick={() => handleAction('start')} 
-                            disabled={actionLoading || linkedContainer.state === 'running'}
-                        >
-                            <FaPlay className="me-2" /> {t('monitor.start')}
-                        </Button>
-                        <Button 
-                            variant="danger" 
-                            onClick={() => handleAction('stop')} 
-                            disabled={actionLoading || linkedContainer.state !== 'running'}
-                        >
-                            <FaStop className="me-2" /> {t('monitor.stop')}
-                        </Button>
-                        <Button 
-                            variant="warning" 
-                            onClick={() => handleAction('restart')} 
-                            disabled={actionLoading}
-                        >
-                            <FaRedo className="me-2" /> {t('monitor.restart')}
-                        </Button>
-                    </ButtonGroup>
-
-                    <div className="d-flex align-items-center ms-auto">
-                        <span className="me-2 text-secondary">Restart Policy:</span>
-                        <Form.Select 
-                            size="sm" 
-                            style={{width: 'auto'}} 
-                            value={targetPolicy}
-                            onChange={(e) => handleRestartPolicy(e.target.value)}
-                            className="bg-card text-primary border-secondary"
-                        >
-                            <option value="no">No</option>
-                            <option value="always">Always</option>
-                            <option value="on-failure">On Failure</option>
-                            <option value="unless-stopped">Unless Stopped</option>
-                        </Form.Select>
-                    </div>
-                </div>
             )}
+
+            <div className="d-flex flex-wrap gap-3 align-items-center mb-4">
+                <ButtonGroup>
+                    <Button 
+                        variant="success" 
+                        onClick={() => handleAction('start')} 
+                        disabled={actionLoading || linkedContainer?.state === 'running'}
+                    >
+                        <FaPlay className="me-2" /> {t('monitor.start')}
+                    </Button>
+                    <Button 
+                        variant="danger" 
+                        onClick={() => handleAction('stop')} 
+                        disabled={actionLoading || (linkedContainer && linkedContainer.state !== 'running')}
+                    >
+                        <FaStop className="me-2" /> {t('monitor.stop')}
+                    </Button>
+                    <Button 
+                        variant="warning" 
+                        onClick={() => handleAction('restart')} 
+                        disabled={actionLoading}
+                    >
+                        <FaRedo className="me-2" /> {t('monitor.restart')}
+                    </Button>
+                </ButtonGroup>
+
+                <div className="d-flex align-items-center ms-auto">
+                    <span className="me-2 text-secondary">{t('monitor.restartPolicy')}:</span>
+                    <Form.Select 
+                        size="sm" 
+                        style={{width: 'auto'}} 
+                        value={targetPolicy}
+                        onChange={(e) => handleRestartPolicy(e.target.value)}
+                        className="bg-card text-primary border-secondary"
+                    >
+                        <option value="no">{t('monitor.restartPolicies.no')}</option>
+                        <option value="always">{t('monitor.restartPolicies.always')}</option>
+                        <option value="on-failure">{t('monitor.restartPolicies.on-failure')}</option>
+                        <option value="unless-stopped">{t('monitor.restartPolicies.unless-stopped')}</option>
+                    </Form.Select>
+                </div>
+            </div>
 
             <div className="log-viewer mb-3">
                 {loadingLogs ? (
@@ -224,14 +267,14 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                     </div>
                 ) : (
                     <pre className="m-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                        {logs || (linkedContainer ? t('monitor.noLogs') : 'Container not attached')}
+                        {logs || (containerId ? t('monitor.noLogs') : t('monitor.containerNotAttached', { defaultValue: 'Container not attached' }))}
                     </pre>
                 )}
                 <div ref={logsEndRef} />
             </div>
             
             <div className="d-flex justify-content-end">
-                <Button variant="outline-light" size="sm" onClick={fetchLogs} disabled={loadingLogs || !linkedContainer}>
+                <Button variant="outline-light" size="sm" onClick={fetchLogs} disabled={loadingLogs || !containerId}>
                      <FaTerminal className="me-2" /> {t('monitor.refreshLogs')}
                 </Button>
             </div>
@@ -283,6 +326,44 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                   </div>
               </Col>
           </Row>
+      </div>
+
+      <div className="kuba-card mt-4">
+          <div className="kuba-card-header">{t('monitor.history', { defaultValue: 'History' })}</div>
+          <div className="table-responsive">
+              <Table hover variant="dark" className="mb-0">
+                  <thead>
+                      <tr>
+                          <th>{t('history.time', { defaultValue: 'Time' })}</th>
+                          <th>{t('history.status', { defaultValue: 'Status' })}</th>
+                          <th>{t('history.latency', { defaultValue: 'Latency' })}</th>
+                          <th>{t('history.message', { defaultValue: 'Message' })}</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {history.length === 0 ? (
+                          <tr>
+                              <td colSpan={4} className="text-center text-secondary py-4">
+                                  {t('history.noData', { defaultValue: 'No history data available yet' })}
+                              </td>
+                          </tr>
+                      ) : (
+                          history.map((entry, i) => (
+                              <tr key={i}>
+                                  <td style={{ whiteSpace: 'nowrap' }}>{new Date(entry.checkedAt).toLocaleString()}</td>
+                                  <td>
+                                      <Badge bg={entry.status === 'up' ? 'success' : entry.status === 'down' ? 'danger' : 'secondary'}>
+                                          {entry.status}
+                                      </Badge>
+                                  </td>
+                                  <td>{entry.latencyMs > 0 ? `${entry.latencyMs}ms` : '-'}</td>
+                                  <td className="text-break" style={{ maxWidth: '400px' }}>{entry.message}</td>
+                              </tr>
+                          ))
+                      )}
+                  </tbody>
+              </Table>
+          </div>
       </div>
 
       <AddMonitorModal 

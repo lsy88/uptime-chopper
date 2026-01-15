@@ -27,6 +27,7 @@ export type MonitorConfig = {
   id: string;
   name: string;
   type: MonitorType;
+  isPaused: boolean;
   intervalSeconds: number;
   timeoutSeconds: number;
   notifyWebhookIds: string[];
@@ -114,24 +115,39 @@ export const createNotification = (n: NotificationWebhook) =>
 
 export const deleteNotification = (id: string) => req<{ ok: boolean }>(`/api/notifications/${id}`, { method: "DELETE" });
 
-export const createMonitor = (m: Partial<MonitorConfig> & Pick<MonitorConfig, "name" | "type">) =>
-  req<MonitorConfig>("/api/monitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(m) });
+export type MonitorHistoryEntry = {
+  status: string;
+  checkedAt: string;
+  latencyMs: number;
+  message: string;
+};
 
-export const updateMonitor = (id: string, m: Partial<MonitorConfig> & Pick<MonitorConfig, "name" | "type">) =>
-  req<MonitorConfig>(`/api/monitors/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(m) });
+export const createMonitor = (m: Partial<MonitorConfig>) =>
+  req<MonitorConfig>("/api/monitors", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(m)
+  });
+
+export const updateMonitor = (id: string, m: Partial<MonitorConfig>) =>
+  req<MonitorConfig>(`/api/monitors/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(m)
+  });
 
 export const deleteMonitor = (id: string) => req<{ ok: boolean }>(`/api/monitors/${id}`, { method: "DELETE" });
 
-export type MonitorStatusInfo = {
-  status: string;
-  lastCheck: string;
-};
+export const pauseMonitor = (id: string) => req<MonitorConfig>(`/api/monitors/${id}/pause`, { method: "POST" });
+export const resumeMonitor = (id: string) => req<MonitorConfig>(`/api/monitors/${id}/resume`, { method: "POST" });
 
-export const getStatus = () => req<{ status: Record<string, MonitorStatusInfo> }>("/api/status");
+export const getMonitorHistory = (id: string) => req<MonitorHistoryEntry[]>(`/api/monitors/${id}/history`);
+
+export const getStatusSnapshot = () => req<{ status: Record<string, { status: string; lastCheck: string }> }>("/api/status");
 
 // Helper to merge data
 export async function getMonitorsWithStatus(): Promise<Monitor[]> {
-  const [monitors, statusData] = await Promise.all([listMonitors(), getStatus()]);
+  const [monitors, statusData] = await Promise.all([listMonitors(), getStatusSnapshot()]);
   return monitors.map(m => {
     const info = statusData.status[m.id];
     const status = info ? info.status : 'pending';

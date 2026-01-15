@@ -8,6 +8,7 @@
     "up": "Up",
     "down": "Down",
     "pending": "Pending",
+    "paused": "Paused",
     "maintenance": "Maintenance"
   },
   "settings": "Settings",
@@ -40,6 +41,7 @@
     "restart": "Restart",
     "refresh": "Refresh",
     "details": "Details",
+    "history": "History",
     "notifications": "Notifications",
     "addNotification": "Add Notification Channel",
     "notificationName": "Notification Name",
@@ -54,6 +56,16 @@
     "types": {
       "http": "HTTP(s)",
       "container": "Docker Container"
+    },
+    "noLogs": "No logs available",
+    "containerNotFound": "Container not found in local Docker context. Attempting to connect via name...",
+    "containerNotAttached": "Container not attached",
+    "restartPolicy": "Restart Policy",
+    "restartPolicies": {
+        "no": "No",
+        "always": "Always",
+        "on-failure": "On Failure",
+        "unless-stopped": "Unless Stopped"
     }
   },
   "detail": {
@@ -64,5 +76,12 @@
     "events": "Recent Events",
     "logs": "Container Logs",
     "lastCheck": "Last Check"
+  },
+  "history": {
+    "time": "Time",
+    "status": "Status",
+    "latency": "Latency",
+    "message": "Message",
+    "noData": "No history data available yet"
   }
 }

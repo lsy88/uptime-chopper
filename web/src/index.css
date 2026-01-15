@@ -9,6 +9,7 @@
   --status-up: #5cdd8b;
   --status-down: #dc3545;
   --status-pending: #ffc107;
+  --status-paused: #6c757d;
 }
 
 body.light-mode {
@@ -106,7 +107,8 @@ body {
 
 .status-dot.up { background-color: var(--status-up); box-shadow: 0 0 8px var(--status-up); }
 .status-dot.down { background-color: var(--status-down); box-shadow: 0 0 8px var(--status-down); }
-.status-dot.pending { background-color: var(--status-pending); }
+.status-dot.pending { background-color: var(--status-pending); box-shadow: 0 0 5px var(--status-pending); }
+.status-dot.paused { background-color: var(--status-paused); box-shadow: none; }
 
 .kuba-card {
   background-color: var(--bg-card);

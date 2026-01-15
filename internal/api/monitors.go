@@ -57,6 +57,61 @@ func monitorsRouter(deps Deps) http.Handler {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
+
+	r.Post("/{id}/pause", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		st := deps.Store.GetState()
+		var found *model.Monitor
+		for _, m := range st.Monitors {
+			if m.ID == id {
+				v := m
+				found = &v
+				break
+			}
+		}
+		if found == nil {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "monitor not found"})
+			return
+		}
+		found.IsPaused = true
+		out, err := deps.Store.UpsertMonitor(*found)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
+	})
+
+	r.Post("/{id}/resume", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		st := deps.Store.GetState()
+		var found *model.Monitor
+		for _, m := range st.Monitors {
+			if m.ID == id {
+				v := m
+				found = &v
+				break
+			}
+		}
+		if found == nil {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "monitor not found"})
+			return
+		}
+		found.IsPaused = false
+		out, err := deps.Store.UpsertMonitor(*found)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
+	})
+
+	r.Get("/{id}/history", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		hist := deps.Engine.GetHistory(id)
+		writeJSON(w, http.StatusOK, hist)
+	})
+
 	return r
 }
 

@@ -20,9 +20,9 @@ const WaveCanvas: React.FC<WaveCanvasProps> = ({ color, height = 50 }) => {
 
     // Configuration matches the article's logic but adapted
     const lines = [
-      `rgba(${color}, 0.3)`, 
-      `rgba(${color}, 0.5)`, 
-      `rgba(${color}, 1)`
+      `rgba(${color}, 0.1)`, 
+      `rgba(${color}, 0.2)`, 
+      `rgba(${color}, 0.2)`
     ];
     
     // Resize handler

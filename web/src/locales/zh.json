@@ -8,6 +8,7 @@
     "up": "正常",
     "down": "异常",
     "pending": "检测中",
+    "paused": "暂停",
     "maintenance": "维护中"
   },
   "settings": "设置",
@@ -54,6 +55,16 @@
     "types": {
       "http": "HTTP(s)",
       "container": "Docker 容器"
+    },
+    "noLogs": "暂无日志",
+    "containerNotFound": "本地 Docker 环境中未找到容器。尝试通过名称连接...",
+    "containerNotAttached": "未关联容器",
+    "restartPolicy": "重启策略",
+    "restartPolicies": {
+        "no": "不重启",
+        "always": "总是重启",
+        "on-failure": "失败时重启",
+        "unless-stopped": "除非手动停止"
     }
   },
   "detail": {
@@ -64,5 +75,12 @@
     "events": "近期事件",
     "logs": "容器日志",
     "lastCheck": "最后检测"
+  },
+  "history": {
+    "time": "时间",
+    "status": "状态",
+    "latency": "延迟",
+    "message": "信息",
+    "noData": "暂无历史数据"
   }
 }

@@ -36,6 +36,7 @@ type Engine struct {
 	mu          sync.RWMutex
 	lastStatus  map[string]model.MonitorStatus
 	lastCheck   map[string]time.Time
+	history     map[string][]model.MonitorHistoryEntry
 	remediateAt map[string]time.Time
 	attempts    map[string]int
 
@@ -50,6 +51,7 @@ func NewEngine(deps EngineDeps) *Engine {
 		deps:        deps,
 		lastStatus:  map[string]model.MonitorStatus{},
 		lastCheck:   map[string]time.Time{},
+		history:     map[string][]model.MonitorHistoryEntry{},
 		remediateAt: map[string]time.Time{},
 		attempts:    map[string]int{},
 		ctx:         ctx,
@@ -99,6 +101,10 @@ func (e *Engine) loop() {
 		case now := <-ticker.C:
 			state := e.deps.Store.GetState()
 			for _, m := range state.Monitors {
+				if m.IsPaused {
+					e.setLastStatus(m.ID, model.StatusPaused, now)
+					continue
+				}
 				interval := time.Duration(maxInt(5, m.IntervalSeconds)) * time.Second
 				nr, ok := nextRun[m.ID]
 				if !ok || !now.Before(nr) {
@@ -127,6 +133,13 @@ func (e *Engine) checkOnce(now time.Time, m model.Monitor) {
 
 	prev := e.getLastStatus(m.ID)
 	e.setLastStatus(m.ID, res.Status, now)
+	e.appendHistory(m.ID, model.MonitorHistoryEntry{
+		Status:    res.Status,
+		CheckedAt: res.CheckedAt,
+		LatencyMs: res.LatencyMs,
+		Message:   res.Message,
+	})
+
 	if res.Status == model.StatusUp && prev != model.StatusUp {
 		e.resetAttempts(m.ID)
 	}
@@ -370,6 +383,34 @@ func (e *Engine) getAttempts(id string) int {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	return e.attempts[id]
+}
+
+func (e *Engine) appendHistory(id string, entry model.MonitorHistoryEntry) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	hist := e.history[id]
+	// Prepend
+	hist = append([]model.MonitorHistoryEntry{entry}, hist...)
+	// Keep last 50
+	if len(hist) > 50 {
+		hist = hist[:50]
+	}
+	e.history[id] = hist
+}
+
+func (e *Engine) GetHistory(id string) []model.MonitorHistoryEntry {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	hist := e.history[id]
+	if hist == nil {
+		return []model.MonitorHistoryEntry{}
+	}
+	// Return copy
+	out := make([]model.MonitorHistoryEntry, len(hist))
+	copy(out, hist)
+	return out
 }
 
 func NewID() string {

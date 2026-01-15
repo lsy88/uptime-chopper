@@ -41,6 +41,7 @@ type Monitor struct {
 	ID               string            `json:"id"`
 	Name             string            `json:"name"`
 	Type             MonitorType       `json:"type"`
+	IsPaused         bool              `json:"isPaused"`
 	IntervalSeconds  int               `json:"intervalSeconds"`
 	TimeoutSeconds   int               `json:"timeoutSeconds"`
 	NotifyWebhookIDs []string          `json:"notifyWebhookIds"`
@@ -72,10 +73,18 @@ const (
 	StatusUnknown MonitorStatus = "unknown"
 	StatusUp      MonitorStatus = "up"
 	StatusDown    MonitorStatus = "down"
+	StatusPaused  MonitorStatus = "paused"
 )
 
 type CheckResult struct {
 	MonitorID string        `json:"monitorId"`
+	Status    MonitorStatus `json:"status"`
+	CheckedAt time.Time     `json:"checkedAt"`
+	LatencyMs int           `json:"latencyMs"`
+	Message   string        `json:"message"`
+}
+
+type MonitorHistoryEntry struct {
 	Status    MonitorStatus `json:"status"`
 	CheckedAt time.Time     `json:"checkedAt"`
 	LatencyMs int           `json:"latencyMs"`

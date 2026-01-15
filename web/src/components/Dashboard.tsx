@@ -1,7 +1,7 @@
 import React from 'react';
 import { Monitor } from '../api';
 import { Card, Row, Col, Badge } from 'react-bootstrap';
-import { FaArrowUp, FaArrowDown, FaClock } from 'react-icons/fa';
+import { FaArrowUp, FaArrowDown, FaClock, FaPause } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import TopBar from './TopBar';
 import WaveCanvas from './WaveCanvas';
@@ -26,10 +26,10 @@ const WaveWrapper = ({ percent, colorRgb }: { percent: number, colorRgb: string 
       opacity: percent <= 0 ? 0 : 1
     }}
   >
-    <div style={{ position: 'absolute', top: '-25px', left: 0, width: '100%', height: '40px' }}>
+    <div style={{ position: 'absolute', top: '-40px', left: 0, width: '100%', height: '40px' }}>
       <WaveCanvas color={colorRgb} height={40} />
     </div>
-    <div style={{ width: '100%', height: '100%', backgroundColor: `rgba(${colorRgb}, 1)` }}></div>
+    <div style={{ width: '100%', height: '100%', backgroundColor: `rgba(${colorRgb}, 0.5)` }}></div>
   </div>
 );
 
@@ -37,11 +37,13 @@ const Dashboard: React.FC<DashboardProps> = ({ monitors, onSelectMonitor, search
   const { t } = useTranslation();
   const upCount = monitors.filter(m => m.status === 'up').length;
   const downCount = monitors.filter(m => m.status === 'down').length;
-  const unknownCount = monitors.length - upCount - downCount;
+  const pausedCount = monitors.filter(m => m.status === 'paused').length;
+  const unknownCount = monitors.length - upCount - downCount - pausedCount;
   
   const total = monitors.length;
   const upPercent = total > 0 ? (upCount / total) * 100 : 0;
   const downPercent = total > 0 ? (downCount / total) * 100 : 0;
+  const pausedPercent = total > 0 ? (pausedCount / total) * 100 : 0;
   const unknownPercent = total > 0 ? (unknownCount / total) * 100 : 0;
 
   return (
@@ -59,39 +61,51 @@ const Dashboard: React.FC<DashboardProps> = ({ monitors, onSelectMonitor, search
         </div>
         
         <Row className="mb-4 g-3">
-          <Col md={4}>
+          <Col md={3}>
             <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
               <WaveWrapper percent={upPercent} colorRgb="92, 221, 139" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary" style={{ color: upPercent > 50 ? '#111' : 'inherit' }}>{t('status.up')}</h6>
-                  <h2 className="mb-0" style={{ color: upPercent > 50 ? '#000' : 'var(--text-primary)' }}>{upCount}</h2>
+                  <h6 className="text-secondary">{t('status.up')}</h6>
+                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{upCount}</h2>
                 </div>
-                <FaArrowUp size={30} className="text-success opacity-50" style={{ color: upPercent > 50 ? '#000 !important' : '' }} />
+                <FaArrowUp size={30} className="text-success opacity-50" />
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4}>
+          <Col md={3}>
             <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
               <WaveWrapper percent={downPercent} colorRgb="220, 53, 69" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary" style={{ color: downPercent > 50 ? '#fff' : 'inherit' }}>{t('status.down')}</h6>
-                  <h2 className="mb-0" style={{ color: downPercent > 50 ? '#fff' : 'var(--text-primary)' }}>{downCount}</h2>
+                  <h6 className="text-secondary">{t('status.down')}</h6>
+                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{downCount}</h2>
                 </div>
-                <FaArrowDown size={30} className="text-danger opacity-50" style={{ color: downPercent > 50 ? '#fff !important' : '' }} />
+                <FaArrowDown size={30} className="text-danger opacity-50" />
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4}>
+          <Col md={3}>
+            <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <WaveWrapper percent={pausedPercent} colorRgb="108, 117, 125" />
+              <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
+                <div>
+                  <h6 className="text-secondary">{t('status.paused', {defaultValue: 'Paused'})}</h6>
+                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{pausedCount}</h2>
+                </div>
+                <FaPause size={30} className="text-secondary opacity-50" />
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3}>
             <Card className="wave-card h-100 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
               <WaveWrapper percent={unknownPercent} colorRgb="255, 193, 7" />
               <Card.Body className="d-flex align-items-center justify-content-between position-relative" style={{ zIndex: 1 }}>
                 <div>
-                  <h6 className="text-secondary" style={{ color: unknownPercent > 50 ? '#000' : 'inherit' }}>{t('status.pending')}</h6>
-                  <h2 className="mb-0" style={{ color: unknownPercent > 50 ? '#000' : 'var(--text-primary)' }}>{unknownCount}</h2>
+                  <h6 className="text-secondary">{t('status.pending')}</h6>
+                  <h2 className="mb-0" style={{ color: 'var(--text-primary)' }}>{unknownCount}</h2>
                 </div>
-                <FaClock size={30} className="text-warning opacity-50" style={{ color: unknownPercent > 50 ? '#000 !important' : '' }} />
+                <FaClock size={30} className="text-warning opacity-50" />
               </Card.Body>
             </Card>
           </Col>

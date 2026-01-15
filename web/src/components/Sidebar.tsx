@@ -1,6 +1,6 @@
 import React from 'react';
 import { Monitor } from '../api';
-import { FaPlus, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaPause } from 'react-icons/fa';
 import { Badge, Form, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({ monitors, selectedId, onSelect, onAdd
     switch (status) {
       case 'up': return 'up';
       case 'down': return 'down';
+      case 'paused': return 'paused'; // Need CSS for this
       default: return 'pending';
     }
   };
@@ -67,6 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ monitors, selectedId, onSelect, onAdd
                 )}
             </div>
             {m.status === 'down' && <Badge bg="danger" pill>!</Badge>}
+                {m.status === 'paused' && <Badge bg="secondary" pill><FaPause size={8} /></Badge>}
           </div>
         ))}
       </div>
