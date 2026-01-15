@@ -13,7 +13,9 @@
 ---
 
 ## ✨ 功能特性
-
+- **超轻量化**：
+  - **go-chi**：使用轻量化路由服务，提供高效的 HTTP 请求路由。
+  - **docker多阶段构建**：最终产物镜像大小只有十几M
 - **多类型监控支持**：
   - **HTTP(s)**：监控网站或 API 接口的可用性与响应时间。
   - **Docker 容器**：直接通过 Docker Socket 监控容器运行状态。
@@ -33,7 +35,7 @@
 
 ## 🛠️ 技术栈
 
-- **后端**：Go 1.24 (Chi Router, Viper Config)
+- **后端**：Go 1.24 (Chi Router)
 - **前端**：React 18, Vite, Bootstrap 5, React Icons
 - **数据存储**：本地 JSON 文件存储 (无需额外数据库)
 - **部署**：Docker / Docker Compose
