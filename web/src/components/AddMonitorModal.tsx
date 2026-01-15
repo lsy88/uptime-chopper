@@ -213,7 +213,13 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                         <Form.Label>{t('monitor.type')}</Form.Label>
                         <Form.Select 
                             value={type} 
-                            onChange={(e) => setType(e.target.value as MonitorType)}
+                            onChange={(e) => {
+                                const newType = e.target.value as MonitorType;
+                                setType(newType);
+                                if (newType === 'container') {
+                                    loadContainers();
+                                }
+                            }}
                             className="bg-body text-primary border-secondary"
                         >
                             <option value="http">{t('monitor.types.http')}</option>
