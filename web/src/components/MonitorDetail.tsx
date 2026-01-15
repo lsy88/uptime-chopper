@@ -42,7 +42,11 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
   // For container monitors, try to find the linked container info
   // If not found in the list, we'll fall back to using the containerName from the monitor config
   // This allows interacting with containers that might not be in the initial list (e.g. hidden or race condition)
-  const linkedContainer = containers.find(c => c.names?.some(n => n.replace('/', '') === monitor.containerName));
+  const linkedContainer = containers.find(c => 
+    c.id === monitor.containerName || 
+    c.id.startsWith(monitor.containerName || '') || 
+    c.names?.some(n => n.replace('/', '') === monitor.containerName)
+  );
   const containerId = linkedContainer?.id || monitor.containerName;
 
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -308,24 +312,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                 </div>
             </div>
 
-            <div className="log-viewer mb-3">
-                {loadingLogs ? (
-                    <div className="text-center p-4">
-                        <Spinner animation="border" variant="light" />
-                    </div>
-                ) : (
-                    <pre className="m-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                        {logs || (containerId ? t('monitor.noLogs') : t('monitor.containerNotAttached', { defaultValue: 'Container not attached' }))}
-                    </pre>
-                )}
-                <div ref={logsEndRef} />
-            </div>
-            
-            <div className="d-flex justify-content-end">
-                <Button variant="outline-light" size="sm" onClick={fetchLogs} disabled={loadingLogs || !containerId}>
-                     <FaTerminal className="me-2" /> {t('monitor.refreshLogs')}
-                </Button>
-            </div>
+
         </div>
       )}
 
@@ -424,6 +411,32 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
               </div>
           )}
       </div>
+
+      {monitor.type === 'container' && (
+        <div className="kuba-card mt-4">
+            <div className="kuba-card-header">
+                <span><FaTerminal className="me-2" /> {t('detail.logs')}</span>
+            </div>
+            <div className="log-viewer mb-3">
+                {loadingLogs ? (
+                    <div className="text-center p-4">
+                        <Spinner animation="border" variant="light" />
+                    </div>
+                ) : (
+                    <pre className="m-0" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        {logs || (containerId ? t('monitor.noLogs') : t('monitor.containerNotAttached', { defaultValue: 'Container not attached' }))}
+                    </pre>
+                )}
+                <div ref={logsEndRef} />
+            </div>
+            
+            <div className="d-flex justify-content-end">
+                <Button variant="outline-light" size="sm" onClick={fetchLogs} disabled={loadingLogs || !containerId}>
+                     <FaTerminal className="me-2" /> {t('monitor.refreshLogs')}
+                </Button>
+            </div>
+        </div>
+      )}
 
       <AddMonitorModal 
         show={showEditModal}
