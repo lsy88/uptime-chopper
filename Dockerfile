@@ -34,8 +34,7 @@ COPY --from=frontend-builder /app/web/dist ./web/dist
 
 RUN mkdir -p data
 
-# Copy default config (if you want to bundle it, otherwise it should be mounted)
-# COPY config.yaml . 
+COPY config.yaml . 
 
 EXPOSE 7601
 
