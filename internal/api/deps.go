@@ -16,7 +16,7 @@ type Deps struct {
 	Store  store.Store
 	Docker *docker.Client
 	Engine *monitor.Engine
-	Config config.Config
+	Config *config.Config
 }
 
 func (d Deps) handleStatus(w http.ResponseWriter, r *http.Request) {
