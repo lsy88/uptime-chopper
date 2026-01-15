@@ -383,7 +383,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                               {chartData.map((entry, index) => (
                                 <stop 
                                   key={index} 
-                                  offset={`${(index / (chartData.length - 1)) * 100}%`} 
+                                  offset={`${(chartData.length > 1 ? index / (chartData.length - 1) : 0) * 100}%`} 
                                   stopColor={entry.status === 'up' ? 'var(--status-up)' : 'var(--status-down)'} 
                                 />
                               ))}
@@ -402,6 +402,7 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                             unit="ms"
                             padding={{ top: 20, bottom: 10 }}
                             tickFormatter={(val) => val < 0 ? '' : val}
+                            domain={[0, (dataMax: number) => Math.max(dataMax || 0, 10)]}
                           />
                           <Tooltip content={<CustomTooltip />} />
                           <Line 
