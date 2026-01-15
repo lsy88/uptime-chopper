@@ -171,6 +171,23 @@ body {
   color: #000;
 }
 
+/* Dropdown overrides for dark theme */
+.dropdown-menu {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+.dropdown-item {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+.dropdown-item:hover, .dropdown-item:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
 /* Bootstrap overrides for dark theme */
 .form-control, .form-select {
   background-color: var(--bg-card);

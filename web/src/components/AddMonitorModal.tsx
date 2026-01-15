@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert, Row, Col, InputGroup, Badge } from 'react-bootstrap';
+import { Modal, Button, Form, Alert, Row, Col, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { MonitorConfig, MonitorType, Container, getContainers, createMonitor, updateMonitor, getNotifications, NotificationWebhook, createNotification, deleteNotification } from '../api';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
@@ -255,18 +255,52 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                         <>
                             <Form.Group className="mb-3">
                                 <Form.Label>{t('monitor.container')}</Form.Label>
-                                <Form.Select 
-                                    value={containerId} 
-                                    onChange={e => setContainerId(e.target.value)}
-                                    className="bg-body text-primary border-secondary"
-                                >
-                                    <option value="">Select a container...</option>
-                                    {containers.map(c => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.names && c.names.length > 0 ? c.names[0].replace('/', '') : c.id.substring(0, 12)} - {c.image}
-                                        </option>
-                                    ))}
-                                </Form.Select>
+                                <Dropdown className="w-100">
+                                    <Dropdown.Toggle 
+                                        variant="outline-secondary" 
+                                        id="container-dropdown" 
+                                        className="w-100 text-start d-flex justify-content-between align-items-center bg-body text-primary border-secondary"
+                                    >
+                                        <span className="text-truncate">
+                                            {(() => {
+                                                const selected = containers.find(c => c.id === containerId);
+                                                if (selected) {
+                                                    const name = selected.names && selected.names.length > 0 ? selected.names[0].replace('/', '') : selected.id.substring(0, 12);
+                                                    return `${name} - ${selected.image}`;
+                                                }
+                                                return "Select a container...";
+                                            })()}
+                                        </span>
+                                    </Dropdown.Toggle>
+
+                                    <Dropdown.Menu className="w-100 shadow-lg" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        {containers.length === 0 ? (
+                                            <Dropdown.Item disabled>No containers found</Dropdown.Item>
+                                        ) : (
+                                            containers.map(c => {
+                                                const name = c.names && c.names.length > 0 ? c.names[0].replace('/', '') : c.id.substring(0, 12);
+                                                return (
+                                                    <Dropdown.Item 
+                                                        key={c.id} 
+                                                        onClick={() => setContainerId(c.id)}
+                                                        active={c.id === containerId}
+                                                    >
+                                                        <div className="d-flex flex-column w-100">
+                                                            <div className="d-flex justify-content-between align-items-center mb-1">
+                                                                <span className="fw-bold text-truncate me-2" style={{maxWidth: '70%'}} title={name}>{name}</span>
+                                                                <Badge bg={c.state === 'running' ? 'success' : 'secondary'} style={{fontSize: '0.7em'}}>{c.state}</Badge>
+                                                            </div>
+                                                            <div className="d-flex justify-content-between align-items-center small text-secondary">
+                                                                <span className="text-truncate me-2" style={{maxWidth: '60%'}} title={c.image}>{c.image}</span>
+                                                                <span style={{fontSize: '0.8em'}}>{c.status}</span>
+                                                            </div>
+                                                        </div>
+                                                    </Dropdown.Item>
+                                                );
+                                            })
+                                        )}
+                                    </Dropdown.Menu>
+                                </Dropdown>
                             </Form.Group>
                             
                             <Row className="mb-3">
@@ -282,9 +316,6 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                                         }}
                                         className="text-secondary"
                                     />
-                                    <Form.Text className="text-muted">
-                                        If the container stops unexpectedly, try to restart it.
-                                    </Form.Text>
                                 </Col>
                             </Row>
                         </>
