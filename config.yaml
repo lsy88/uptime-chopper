@@ -3,13 +3,4 @@ max_docker_log_bytes: 65536
 default_docker_log_since: "3600s"
 serve_frontend_from_dist: true
 frontend_dist_directory: "web/dist"
-# notifications:
-#   - name: "Discord"
-#     url: "https://discord.com/api/webhooks/..."
-#     type: "discord"
-#   - name: "DingTalk"
-#     url: "https://oapi.dingtalk.com/robot/send?access_token=..."
-#     type: "dingtalk"
-#   - name: "WeChat"
-#     url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..."
-#     type: "wechat"
+data_file_path: "data/data.json"

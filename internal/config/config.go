@@ -8,20 +8,20 @@ import (
 )
 
 type NotificationWebhook struct {
-	Name string `mapstructure:"name" json:"name"`
-	URL  string `mapstructure:"url" json:"url"`
-	Type string `mapstructure:"type" json:"type"` // webhook, dingtalk, wechat
+	Name string `mapstructure:"name" yaml:"name"`
+	URL  string `mapstructure:"url" yaml:"url"`
+	Type string `mapstructure:"type" yaml:"type"` // webhook, dingtalk, wechat
 }
 
 type Config struct {
-	HTTPAddr              string                `mapstructure:"http_addr" json:"httpAddr"`
-	DataFilePath          string                `mapstructure:"data_file_path" json:"dataFilePath"`
-	Notifications         []NotificationWebhook `mapstructure:"notifications" json:"notifications"`
-	MaxDockerLogBytes     int                   `mapstructure:"max_docker_log_bytes" json:"maxDockerLogBytes"`
-	DefaultDockerLogSince time.Duration         `mapstructure:"default_docker_log_since" json:"defaultDockerLogSince"`
-	AllowedCORSOrigin     string                `mapstructure:"allowed_cors_origin" json:"allowedCorsOrigin"`
-	ServeFrontendFromDist bool                  `mapstructure:"serve_frontend_from_dist" json:"serveFrontendFromDist"`
-	FrontendDistDirectory string                `mapstructure:"frontend_dist_directory" json:"frontendDistDirectory"`
+	HTTPAddr              string                `mapstructure:"http_addr" yaml:"http_addr"`
+	DataFilePath          string                `mapstructure:"data_file_path" yaml:"data_file_path"`
+	Notifications         []NotificationWebhook `mapstructure:"notifications" yaml:"notifications"`
+	MaxDockerLogBytes     int                   `mapstructure:"max_docker_log_bytes" yaml:"max_docker_log_bytes"`
+	DefaultDockerLogSince time.Duration         `mapstructure:"default_docker_log_since" yaml:"default_docker_log_since"`
+	AllowedCORSOrigin     string                `mapstructure:"allowed_cors_origin" yaml:"allowed_cors_origin"`
+	ServeFrontendFromDist bool                  `mapstructure:"serve_frontend_from_dist" yaml:"serve_frontend_from_dist"`
+	FrontendDistDirectory string                `mapstructure:"frontend_dist_directory" yaml:"frontend_dist_directory"`
 }
 
 func Load() (*Config, error) {
@@ -43,10 +43,14 @@ func Load() (*Config, error) {
 		}
 	}
 
-	var cfg *Config
-	if err := v.Unmarshal(cfg); err != nil {
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	if cfg.DataFilePath == "" {
+		cfg.DataFilePath = "data/data.json"
+	}
+
+	return &cfg, nil
 }
