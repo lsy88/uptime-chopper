@@ -29,7 +29,6 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata
 
 COPY --from=backend-builder /app/uptime-chopper .
-
 COPY --from=frontend-builder /app/web/dist ./web/dist
 
 RUN mkdir -p data
