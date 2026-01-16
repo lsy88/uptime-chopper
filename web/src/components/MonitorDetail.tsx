@@ -168,6 +168,9 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
       time: new Date(entry.checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       fullTime: new Date(entry.checkedAt).toLocaleString(),
       latency: entry.latencyMs,
+      // Fix: If latency is 0 (common in docker), Recharts might have trouble rendering the line connector perfectly on the axis.
+      // We use a tiny non-zero value for rendering to ensure the line is drawn.
+      displayLatency: entry.latencyMs === 0 ? 0.01 : entry.latencyMs,
       status: entry.status,
       message: entry.message
   }));
@@ -203,13 +206,17 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
       const { cx, cy, payload } = props;
       if (payload.status === 'down') {
           return (
-              <circle cx={cx} cy={cy} r={4} stroke="none" fill="var(--status-down)" />
+              <circle cx={cx} cy={cy} r={4} stroke="none" fill="#dc3545" />
           );
       }
       return (
-          <circle cx={cx} cy={cy} r={3} stroke="none" fill="var(--status-up)" />
+          <circle cx={cx} cy={cy} r={3} stroke="none" fill="#5cdd8b" />
       );
   };
+
+  const isAllUp = chartData.every(d => d.status === 'up');
+  const isAllDown = chartData.every(d => d.status === 'down');
+  const gradientId = `colorStatus-${monitor.id}`;
 
   return (
     <div className="animate-fade-in" style={{ padding: '20px' }}>
@@ -379,12 +386,12 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                           }}
                       >
                           <defs>
-                            <linearGradient id={`colorStatus-${monitor.id}`} x1="0" y1="0" x2="1" y2="0">
+                            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
                               {chartData.map((entry, index) => (
                                 <stop 
                                   key={index} 
                                   offset={`${(chartData.length > 1 ? index / (chartData.length - 1) : 0) * 100}%`} 
-                                  stopColor={entry.status === 'up' ? 'var(--status-up)' : 'var(--status-down)'} 
+                                  stopColor={entry.status === 'up' ? '#5cdd8b' : '#dc3545'} 
                                 />
                               ))}
                             </linearGradient>
@@ -400,19 +407,20 @@ const MonitorDetail: React.FC<MonitorDetailProps> = ({ monitor, containers, onRe
                             stroke="var(--text-secondary)" 
                             tick={{fontSize: 12}}
                             unit="ms"
-                            padding={{ top: 20, bottom: 10 }}
+                            padding={{ top: 20, bottom: 0 }}
                             tickFormatter={(val) => val < 0 ? '' : val}
                             domain={[0, (dataMax: number) => Math.max(dataMax || 0, 10)]}
                           />
                           <Tooltip content={<CustomTooltip />} />
                           <Line 
                             type="monotone" 
-                            dataKey="latency" 
-                            stroke={`url(#colorStatus-${monitor.id})`} 
+                            dataKey="displayLatency" 
+                            stroke={isAllUp ? '#5cdd8b' : isAllDown ? '#dc3545' : `url(#${gradientId})`}
                             strokeWidth={3}
                             dot={<CustomizedDot />}
                             activeDot={{ r: 6, fill: 'var(--text-primary)' }}
                             isAnimationActive={false}
+                            connectNulls
                           />
                       </LineChart>
                   </ResponsiveContainer>
