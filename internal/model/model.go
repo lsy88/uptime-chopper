@@ -44,6 +44,7 @@ type Monitor struct {
 	IsPaused         bool              `json:"isPaused"`
 	IntervalSeconds  int               `json:"intervalSeconds"`
 	TimeoutSeconds   int               `json:"timeoutSeconds"`
+	RetentionDays    int               `json:"retentionDays"` // New field: 0 means default (e.g. 30 days or forever?), user can set
 	NotifyWebhookIDs []string          `json:"notifyWebhookIds"`
 	CreatedAt        time.Time         `json:"createdAt"`
 	UpdatedAt        time.Time         `json:"updatedAt"`
@@ -89,6 +90,7 @@ type MonitorHistoryEntry struct {
 	CheckedAt time.Time     `json:"checkedAt"`
 	LatencyMs int           `json:"latencyMs"`
 	Message   string        `json:"message"`
+	Logs      string        `json:"logs,omitempty"`
 }
 
 type EventType string

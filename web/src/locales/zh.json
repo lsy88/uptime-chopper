@@ -28,6 +28,7 @@
     "url": "URL",
     "interval": "检测间隔 (秒)",
     "timeout": "超时时间 (秒)",
+    "retention": "保存状态时间 (天)",
     "container": "Docker 容器",
     "autoRestart": "故障时自动重启容器",
     "save": "保存",

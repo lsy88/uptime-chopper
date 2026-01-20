@@ -36,7 +36,6 @@ type Engine struct {
 	mu          sync.RWMutex
 	lastStatus  map[string]model.MonitorStatus
 	lastCheck   map[string]time.Time
-	history     map[string][]model.MonitorHistoryEntry
 	remediateAt map[string]time.Time
 	attempts    map[string]int
 
@@ -51,7 +50,6 @@ func NewEngine(deps EngineDeps) *Engine {
 		deps:        deps,
 		lastStatus:  map[string]model.MonitorStatus{},
 		lastCheck:   map[string]time.Time{},
-		history:     map[string][]model.MonitorHistoryEntry{},
 		remediateAt: map[string]time.Time{},
 		attempts:    map[string]int{},
 		ctx:         ctx,
@@ -60,19 +58,15 @@ func NewEngine(deps EngineDeps) *Engine {
 }
 
 func (e *Engine) Start() {
-	e.deps.Logger.Info("monitor engine started")
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
-		e.loop()
-	}()
+	e.deps.Logger.Info("starting monitor engine")
+	go e.loop()
+	go e.pruneLoop()
 }
 
 func (e *Engine) Stop() {
-	e.deps.Logger.Info("monitor engine stopping")
+	e.deps.Logger.Info("stopping monitor engine")
 	e.cancel()
 	e.wg.Wait()
-	e.deps.Logger.Info("monitor engine stopped")
 }
 
 func (e *Engine) StatusSnapshot() map[string]model.MonitorStatusInfo {
@@ -88,7 +82,40 @@ func (e *Engine) StatusSnapshot() map[string]model.MonitorStatusInfo {
 	return out
 }
 
+func (e *Engine) pruneLoop() {
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	// Initial prune
+	e.pruneAll()
+
+	for {
+		select {
+		case <-e.ctx.Done():
+			return
+		case <-ticker.C:
+			e.pruneAll()
+		}
+	}
+}
+
+func (e *Engine) pruneAll() {
+	state := e.deps.Store.GetState()
+	for _, m := range state.Monitors {
+		if m.RetentionDays > 0 {
+			if err := e.deps.Store.PruneMonitorHistory(m.ID, m.RetentionDays); err != nil {
+				e.deps.Logger.Error("failed to prune history", zap.String("monitor_id", m.ID), zap.Error(err))
+			}
+		}
+	}
+}
+
 func (e *Engine) loop() {
+	e.wg.Add(1)
+	defer e.wg.Done()
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
@@ -133,11 +160,18 @@ func (e *Engine) checkOnce(now time.Time, m model.Monitor) {
 
 	prev := e.getLastStatus(m.ID)
 	e.setLastStatus(m.ID, res.Status, now)
+
+	logsContent := ""
+	if logs != nil {
+		logsContent = logs.Content
+	}
+
 	e.appendHistory(m.ID, model.MonitorHistoryEntry{
 		Status:    res.Status,
 		CheckedAt: res.CheckedAt,
 		LatencyMs: res.LatencyMs,
 		Message:   res.Message,
+		Logs:      logsContent,
 	})
 
 	if res.Status == model.StatusUp && prev != model.StatusUp {
@@ -395,31 +429,18 @@ func (e *Engine) getAttempts(id string) int {
 }
 
 func (e *Engine) appendHistory(id string, entry model.MonitorHistoryEntry) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	hist := e.history[id]
-	// Prepend
-	hist = append([]model.MonitorHistoryEntry{entry}, hist...)
-	// Keep last 50
-	if len(hist) > 50 {
-		hist = hist[:50]
+	if err := e.deps.Store.AddMonitorHistory(id, entry); err != nil {
+		e.deps.Logger.Error("failed to append history", zap.String("monitor_id", id), zap.Error(err))
 	}
-	e.history[id] = hist
 }
 
 func (e *Engine) GetHistory(id string) []model.MonitorHistoryEntry {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-
-	hist := e.history[id]
-	if hist == nil {
+	hist, err := e.deps.Store.GetMonitorHistory(id)
+	if err != nil {
+		e.deps.Logger.Error("failed to get history", zap.String("monitor_id", id), zap.Error(err))
 		return []model.MonitorHistoryEntry{}
 	}
-	// Return copy
-	out := make([]model.MonitorHistoryEntry, len(hist))
-	copy(out, hist)
-	return out
+	return hist
 }
 
 func NewID() string {

@@ -29,9 +29,10 @@ export type MonitorConfig = {
   type: MonitorType;
   isPaused: boolean;
   intervalSeconds: number;
-  timeoutSeconds: number;
-  notifyWebhookIds: string[];
-  createdAt: string;
+    timeoutSeconds: number;
+    retentionDays?: number;
+    notifyWebhookIds: string[];
+    createdAt: string;
   updatedAt: string;
   http?: { url: string };
   container?: {

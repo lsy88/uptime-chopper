@@ -28,6 +28,7 @@
     "url": "URL",
     "interval": "Heartbeat Interval (s)",
     "timeout": "Timeout (s)",
+    "retention": "History Retention (Days)",
     "container": "Docker Container",
     "autoRestart": "Auto Restart Container on Failure",
     "save": "Save",

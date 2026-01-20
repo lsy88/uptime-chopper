@@ -28,7 +28,7 @@ func main() {
 		logger.Fatal("load config", zap.Error(err))
 	}
 
-	st, err := store.NewJSONStore(cfg.DataFilePath)
+	st, err := store.NewSQLiteStore(cfg.DataFilePath)
 	if err != nil {
 		logger.Fatal("open store", zap.Error(err))
 	}

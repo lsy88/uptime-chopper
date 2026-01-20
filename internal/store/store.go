@@ -23,16 +23,24 @@ type Store interface {
 	GetNotifications() []model.Notification
 	UpsertNotification(n model.Notification) (model.Notification, error)
 	DeleteNotification(id string) error
+
+	AddMonitorHistory(id string, entry model.MonitorHistoryEntry) error
+	GetMonitorHistory(id string) ([]model.MonitorHistoryEntry, error)
+	PruneMonitorHistory(id string, days int) error
 }
 
 type JSONStore struct {
 	filePath string
 	mu       sync.RWMutex
 	state    State
+	history  map[string][]model.MonitorHistoryEntry
 }
 
 func NewJSONStore(filePath string) (*JSONStore, error) {
-	s := &JSONStore{filePath: filePath}
+	s := &JSONStore{
+		filePath: filePath,
+		history:  make(map[string][]model.MonitorHistoryEntry),
+	}
 	if err := s.load(); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			s.state = State{
@@ -158,6 +166,35 @@ func (s *JSONStore) DeleteNotification(id string) error {
 	s.state.Notifications = dst
 
 	return s.persistLocked()
+}
+
+func (s *JSONStore) AddMonitorHistory(id string, entry model.MonitorHistoryEntry) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	hist := s.history[id]
+	// Prepend
+	hist = append([]model.MonitorHistoryEntry{entry}, hist...)
+	// Keep last 50
+	if len(hist) > 50 {
+		hist = hist[:50]
+	}
+	s.history[id] = hist
+	return nil
+}
+
+func (s *JSONStore) GetMonitorHistory(id string) ([]model.MonitorHistoryEntry, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	hist := s.history[id]
+	if hist == nil {
+		return []model.MonitorHistoryEntry{}, nil
+	}
+	// Return copy
+	out := make([]model.MonitorHistoryEntry, len(hist))
+	copy(out, hist)
+	return out, nil
 }
 
 func (s *JSONStore) load() error {

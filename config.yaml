@@ -3,4 +3,4 @@ max_docker_log_bytes: 65536
 default_docker_log_since: "3600s"
 serve_frontend_from_dist: true
 frontend_dist_directory: "web/dist"
-data_file_path: "data/data.json"
+data_file_path: "data/data.db"

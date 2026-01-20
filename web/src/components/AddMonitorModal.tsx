@@ -19,6 +19,7 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
     const [containerId, setContainerId] = useState('');
     const [interval, setInterval] = useState<number | string>(60);
     const [timeout, setTimeout] = useState<number | string>(10);
+    const [retention, setRetention] = useState<number | string>(30); // Default 30 days
     const [containers, setContainers] = useState<Container[]>([]);
     const [notifications, setNotifications] = useState<NotificationWebhook[]>([]);
     const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
@@ -44,6 +45,7 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                 setType(initialData.type);
                 setInterval(initialData.intervalSeconds);
                 setTimeout(initialData.timeoutSeconds);
+                setRetention(initialData.retentionDays || 30);
                 setSelectedNotifications(initialData.notifyWebhookIds || []);
                 if (initialData.type === 'http' && initialData.http) {
                     setUrl(initialData.http.url);
@@ -70,6 +72,7 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
         setContainerId('');
         setInterval(60);
         setTimeout(10);
+        setRetention(30);
         setAutoStart(false);
         setAutoRestart(false);
         setSelectedNotifications([]);
@@ -167,6 +170,8 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                 type,
                 intervalSeconds: Number(interval),
                 timeoutSeconds: Number(timeout),
+                retentionDays: Number(retention),
+                isPaused: initialData ? initialData.isPaused : false,
                 notifyWebhookIds: selectedNotifications,
                 logs: { include: false, tail: 50 } // Default
             };
@@ -431,7 +436,7 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                     </Form.Group>
 
                     <Row>
-                        <Col>
+                        <Col md={4}>
                             <Form.Group className="mb-3">
                                 <Form.Label>{t('monitor.interval')}</Form.Label>
                                 <Form.Control 
@@ -442,13 +447,24 @@ const AddMonitorModal: React.FC<AddMonitorModalProps> = ({ show, onHide, onSaved
                                 />
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={4}>
                             <Form.Group className="mb-3">
                                 <Form.Label>{t('monitor.timeout')}</Form.Label>
                                 <Form.Control 
                                     type="number" 
                                     value={timeout}
                                     onChange={e => setTimeout(e.target.value === '' ? '' : Number(e.target.value))}
+                                    className="bg-body text-primary border-secondary"
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group className="mb-3">
+                                <Form.Label>{t('monitor.retention', { defaultValue: 'Retention (Days)' })}</Form.Label>
+                                <Form.Control 
+                                    type="number" 
+                                    value={retention}
+                                    onChange={e => setRetention(e.target.value === '' ? '' : Number(e.target.value))}
                                     className="bg-body text-primary border-secondary"
                                 />
                             </Form.Group>

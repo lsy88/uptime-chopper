@@ -49,7 +49,7 @@ func Load() (*Config, error) {
 	}
 
 	if cfg.DataFilePath == "" {
-		cfg.DataFilePath = "data/data.json"
+		cfg.DataFilePath = "data/data.db"
 	}
 
 	return &cfg, nil
